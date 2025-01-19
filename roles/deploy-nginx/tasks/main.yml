@@ -1,0 +1,110 @@
+---
+
+- name: Install Nginx
+  apt:
+   name: nginx
+   state: present
+   update_cache: yes
+
+- name: Set correct permissions for /etc/nginx directory
+  file:
+   path: /etc/nginx
+   state: directory
+   mode: '0775'
+   owner: root
+   group: deploy
+
+- name: Set correct permissions for /var/www directory
+  file:
+   path: /var/www
+   state: directory
+   mode: '0775'
+   owner: root
+   group: deploy
+
+- name: create nginx conf
+  become_user: deploy
+  file:
+   path: /etc/nginx/projects_conf
+   state: directory
+   mode: '0755'
+
+- name: create project nginx
+  become_user: deploy
+  file:
+   path: /etc/nginx/projects
+   state: directory
+   mode: '0777'
+
+- name: create panels
+  become_user: deploy
+  file:
+   path: /etc/nginx/projects/panels
+   state: directory
+   mode: '0777'
+
+- name: set ptoject
+  become_user: deploy
+  file:
+   path: /etc/nginx/projects
+   state: directory
+   owner: deploy
+   group: deploy
+   recurse: yes
+
+- name: create geoip
+  become_user: deploy
+  file:
+   path: /var/www/server/frontend/shared/runtime/GeoIP
+   state: directory
+   mode: '0755'
+
+- name: copy nginx
+  copy:
+   src: nginx.conf_
+   dest: /etc/nginx/nginx.conf
+   owner: root
+   group: root
+   mode: '0644'
+
+- name: copy default.conf
+  copy:
+   src: default.conf
+   dest: /etc/nginx/default.conf
+   owner: root
+   group: deploy
+   mode: '0644'
+
+
+- name: install logrotate
+  apt:
+   name: logrotate
+   state: present
+   update_cache: yes
+
+- name: copy rotation file
+  copy:
+   src: rotation.conf
+   dest: /etc/logrotate.d/nginx
+   owner: root
+   group: root
+   mode: '0644'
+
+- name: nginx log
+  file:
+   path: /var/log/nginx
+   state: directory
+   owner: root
+   group: root
+   mode: '0755'
+
+- name: Restart nginx service
+  systemd:
+   name: nginx
+   state: restarted
+   enabled: yes
+
+
+- name: Reboot the server
+  reboot:
+   reboot_timeout: 600

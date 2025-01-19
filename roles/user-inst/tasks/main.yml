@@ -1,0 +1,42 @@
+---
+
+- name: ensure deploy user exists
+  user:
+    name: deploy
+    shell: /bin/bash
+    home: /home/deploy
+    state: present
+    create_home: yes
+
+- name: create .ssh directory for deploy
+  file:
+    path: /home/deploy/.ssh
+    state: directory
+    owner: deploy
+    group: deploy
+    mode: '0700'
+
+- name: add public key authorized_keys
+  copy:
+    src: ~/antest/secret/dev_id_rsa.pub
+    dest: /home/deploy/.ssh/authorized_keys
+    owner: deploy
+    group: deploy
+    mode: '0600'
+
+- name: add private key
+  copy:
+    src: ~/antest/secret/dev_id_rsa
+    dest: /home/deploy/.ssh/id_rsa
+    owner: deploy
+    group: deploy
+    mode: '0600'
+
+- name: add public key
+  copy:
+    src: ~/antest/secret/dev_id_rsa.pub
+    dest: /home/deploy/.ssh/id_rsa.pub
+    owner: deploy
+    group: deploy
+    mode: '0644'
+

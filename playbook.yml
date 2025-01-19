@@ -1,0 +1,17 @@
+
+---
+
+- name: Create Host
+  hosts: all
+  become: yes
+  become_user: root
+  vars_files:
+   - "~/antest/secret/passsql.yml"
+
+  roles:
+   - testtask
+   - python-inst
+   - mysql-task
+   - user-inst
+   - composer
+   - deploy-nginx

@@ -1,0 +1,36 @@
+---
+
+- name: Install Python 3.9.6
+  block:
+   - name: download Python 3.9.6
+     get_url:
+      url: https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz
+      dest: "~/Python-3.9.6.tgz"
+
+   - name: extract Python 3.9.6
+     unarchive:
+      src: "~/Python-3.9.6.tgz"
+      dest: "~"
+      remote_src: yes
+
+   - name: configure Python 3.9.6 
+     shell: |
+      cd ~/Python-3.9.6/
+      ./configure --prefix=/opt/python3 && make && make install
+     args:
+      chdir: ~/Python-3.9.6/
+
+   - name: upgrade pip  Python 3.9
+     command: /opt/python3/bin/pip3.9 install --upgrade pip
+
+   - name: Install packages Python 3.9
+     command: /opt/python3/bin/pip3.9 install "{{ item }}"
+     loop:
+      - pycurl
+      - mysqlclient
+      - mysql-connector-python
+      - certifi
+      - redis
+      - sentry-sdk
+
+

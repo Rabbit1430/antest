@@ -1,0 +1,231 @@
+---
+- name: Ping server
+  ping:
+
+- name:  UTC
+  command: timedatectl set-timezone UTC
+
+- name: Stop  proces user
+  shell: pkill -9 -u debian || true
+  ignore_errors: yes
+
+
+- name: Delte debian user
+  user:
+   name: debian
+   state: absent
+
+
+- name: create list packages
+  set_fact:
+   packages: "{{ lookup('file', 'files/packages.yml') | from_yaml }}"
+
+- name: install packages
+  apt:
+   name: "{{ item }}"
+   state: present
+   update_cache: yes
+  loop: "{{ packages }}"
+
+- name: pip-python install
+  apt:
+   name: python3-pip
+   state: present
+   update_cache: yes
+
+
+
+- name: Set net.ipv4.ip_local_port_range
+  sysctl:
+   name: net.ipv4.ip_local_port_range
+   value: "1024 65535"
+   state: present
+   reload: yes
+
+- name: Set fs.nr_open
+  sysctl:
+   name: fs.nr_open
+   value: "2000000"
+   state: present
+   reload: yes
+
+- name: Set fs.file-max
+  sysctl:
+   name: fs.file-max
+   value: "5000000"
+   state: present
+   reload: yes
+
+
+- name: set /etc/systemd/system.conf and /etc/security/limits.conf
+  block:
+   - name:  DefaultLimitNOFILE in /etc/systemd/system.conf
+     lineinfile:
+      path: /etc/systemd/system.conf
+      line: 'DefaultLimitNOFILE=6500535'
+      state: present
+
+   - name: limits for /etc/security/limits.conf
+     lineinfile:
+      path: /etc/security/limits.conf
+      line: 'root hard nofile 6500536'
+      state: present
+
+   - name: soft nofile for /etc/security/limits.conf
+     lineinfile:
+      path: /etc/security/limits.conf
+      line: 'root soft nofile 6500535'
+      state: present
+
+   - name: soft all user /etc/security/limits.conf
+     lineinfile:
+      path: /etc/security/limits.conf
+      line: '* soft nofile 40000000'
+      state: present
+
+   - name: hard all users in /etc/security/limits.conf
+     lineinfile:
+      path: /etc/security/limits.conf
+      line: '* hard nofile 40000000'
+      state: present
+
+
+
+#- name: Install Python 3.9 
+#  block:
+#   - name: download Python 3.9.6 
+#     get_url:
+#      url: https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz
+#      dest: "~/Python-3.9.6.tgz"
+
+#   - name: Extract Python 3.9.6 tarball
+#     unarchive:
+#      src: "~/Python-3.9.6.tgz"
+#      dest: "~"
+#      remote_src: yes
+
+#   - name: Configure Python 3.9.6 installation
+#     shell: |
+#      cd ~/Python-3.9.6/
+#      ./configure --prefix=/opt/python3 && make && make install
+#     args:
+#      chdir: ~/Python-3.9.6/
+
+#   - name: Upgrade pip for Python 3.9
+#     command: /opt/python3/bin/pip3.9 install --upgrade pip
+
+#   - name: Install required Python packages for Python 3.9
+#     command: /opt/python3/bin/pip3.9 install "{{ item }}"
+#     loop:
+#      - pycurl
+#      - mysqlclient
+#      - mysql-connector-python
+#      - certifi
+#      - redis
+#      - sentry-sdk
+
+
+
+
+#- name: Copy MySQL APT config package to the server
+#  copy:
+#   src: ~/antest/mysql-apt-config_0.8.18-1_all.deb
+#   dest: /tmp/mysql-apt-config_0.8.18-1_all.deb
+
+
+#- name: Add official APT repository
+#  apt_repository:
+#   repo: "deb http://repo.mysql.com/apt/debian/ buster mysql-5.7"
+#   state: present
+#   filename: mysql
+#   update_cache: yes
+
+
+#- name: Pre-configure MySQL 5.7 installation
+#  debconf:
+#   name: mysql-apt-config
+#   question: 'mysql-apt-config/repo-distro'
+#   value: 'buster'
+#   vtype: string
+
+#- name: Pre-configure MySQL 5.7 server version selection
+#  debconf:
+#   name: mysql-apt-config
+#   question: 'mysql-apt-config/select-server'
+#   value: 'mysql-5.7'
+#   vtype: string
+
+#- name: Pre-configure MySQL APT repository
+#  debconf:
+#   name: mysql-apt-config
+#   question: 'mysql-apt-config/repo'
+#   value: 'mysql-5.7'
+#   vtype: string
+
+
+
+#- name: Update apt cache
+#  apt:
+#   update_cache: yes
+
+
+#- name: Install MySQL 5.7
+#  apt:
+#   name: mysql-community-server
+#   state: present
+
+#- name: Start and enable MySQL service
+#  service:
+#   name: mysql
+#   state: started
+#   enabled: yes
+
+#- name: Set MySQL root password
+#  mysql_user:
+#   name: root
+#   password: "{{ mysql_root_password }}"
+#   host: 'localhost'
+#   state: present
+#  ignore_errors: yes
+
+
+
+#- name: Ensure deploy user exists
+#  user:
+#    name: deploy
+#    shell: /bin/bash
+#    home: /home/deploy
+#    state: present
+#    create_home: yes
+
+#- name: Create .ssh directory for deploy user
+#  file:
+#    path: /home/deploy/.ssh
+#    state: directory
+#    owner: deploy
+#    group: deploy
+#    mode: '0700'
+
+#- name: Add public key to authorized_keys
+#  copy:
+#    src: ~/antest/secret/dev_id_rsa.pub
+#    dest: /home/deploy/.ssh/authorized_keys
+#    owner: deploy
+#    group: deploy
+#    mode: '0600'
+
+#- name: Add private key
+#  copy:
+#    src: ~/antest/secret/dev_id_rsa
+#    dest: /home/deploy/.ssh/id_rsa
+#    owner: deploy
+#    group: deploy
+#    mode: '0600'
+
+#- name: Add public key file
+#  copy:
+#    src: ~/antest/secret/dev_id_rsa.pub
+#    dest: /home/deploy/.ssh/id_rsa.pub
+#    owner: deploy
+#    group: deploy
+#    mode: '0644'

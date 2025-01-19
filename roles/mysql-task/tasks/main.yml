@@ -1,0 +1,81 @@
+---
+
+- name: add gpg key
+  shell: apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B7B3B788A8D3785C
+  args:
+    executable: /bin/bash
+
+- name: Copy MySQL APT config package to the server
+  copy:
+   src: ~/antest/mysql-apt-config_0.8.18-1_all.deb
+   dest: /tmp/mysql-apt-config_0.8.18-1_all.deb
+
+
+- name: Add  APT repository
+  apt_repository:
+   repo: "deb http://repo.mysql.com/apt/debian/ buster mysql-5.7"
+   state: present
+   filename: mysql
+   update_cache: yes
+
+- name: configure mysql 5.7 install
+  debconf:
+   name: mysql-apt-config
+   question: 'mysql-apt-config/repo-distro'
+   value: 'buster'
+   vtype: string
+
+- name: configure mysql  server version 
+  debconf:
+   name: mysql-apt-config
+   question: 'mysql-apt-config/select-server'
+   value: 'mysql-5.7'
+   vtype: string
+
+- name: configure mysql repository
+  debconf:
+   name: mysql-apt-config
+   question: 'mysql-apt-config/repo'
+   value: 'mysql-5.7'
+   vtype: string
+
+
+- name: mysql root password
+  debconf:
+   name: "mysql-server"
+   question: "mysql-server/root_password"
+   value: "{{ mysql_root_password }}"
+   vtype: "password"
+
+- name: confirm mysql  root password
+  debconf:
+   name: "mysql-server"
+   question: "mysql-server/root_password_again"
+   value: "{{ mysql_root_password }}"
+   vtype: "password"
+
+
+
+- name: Update apt cache
+  apt:
+   update_cache: yes
+
+
+- name: Install MySQL 5.7
+  apt:
+   name: mysql-community-server
+   state: present
+
+- name: Start and enable MySQL service
+  service:
+   name: mysql
+   state: started
+   enabled: yes
+
+- name: password rott
+  shell: >
+    mysql -e "ALTER USER 'root'@'localhost'
+    IDENTIFIED WITH 'mysql_native_password'
+    BY '{{ mysql_root_password }}'; FLUSH PRIVILEGES;"
+
+
